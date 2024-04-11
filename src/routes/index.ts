@@ -1,9 +1,8 @@
 import express from "express";
 import {
-   getAllUsersService,
-}
-   from "../services";
-import {
+   createBoardCTRL,
+   createUserCTRL,
+   getAllUsersCTRL,
    getBoardByIdCTRL,
    getBoardColumnsCTRL,
    getTaskDetailsCTRL,
@@ -12,11 +11,16 @@ import {
 
 const router = express.Router();
 
-router.get("/:user_id/boards", getUserBoardsCTRL)
+router.route("/:user_id/boards")
+   .get(getUserBoardsCTRL)
+   .post(createBoardCTRL);
 
-router.get("/users", getAllUsersService)
+router.route("/users")
+   .get(getAllUsersCTRL)
+   .post(createUserCTRL);
 
-router.get("/boards/:board_id", getBoardByIdCTRL)
+router.route("/boards/:board_id")
+   .get(getBoardByIdCTRL)
 
 router.get("/tasks/:task_id", getTaskDetailsCTRL)
 

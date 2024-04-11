@@ -1,25 +1,46 @@
-import { Request, Response } from "express";
 import pool from "../database";
 import queries from "../queries";
 
-// export const createUserService = async (req: Request, res: Response) => {
-//     try {
-//         const { name, email } = req.body;
-//         const result = await pool.query("INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *", [name, email]);
-//         return res.status(201).json(result.rows[0]);
-//     } catch (error) {
-//         console.error(error);
-//         return res.status(500).json(error);
-//     }
-// }
+interface IUserPayload {
+    email: string;
+    lastName?: string;
+    firstName?: string;
+}
 
-export const getAllUsersService = async (req: Request, res: Response) => {
+interface ICreateBoardPayload {
+    name: string;
+    userId: string;
+}
+
+export const createUserService = async (payload: IUserPayload) => {
+    try {
+
+        const user = await pool.query(queries.getUserByEmail, [payload.email]);
+
+        if (user?.rows?.[0]?.id) {
+            return user.rows?.[0];
+        }
+
+        const result = await pool.query(
+            queries.createUser,
+            [payload.email, payload.firstName || "", payload?.lastName || ""]
+        );
+
+        return result.rows?.[0];
+    } catch (error) {
+        console.error('Error creating user', error);
+        throw error;
+    }
+}
+
+export const getAllUsersService = async () => {
     try {
         const result = await pool.query(queries.getAllUsers);
-        return res.status(200).json({ users: result.rows, count: result.rowCount });
+        
+        return result.rows;
     } catch (error) {
-        console.error(error);
-        return res.status(500).json(error);
+        console.error('Error getting users', error);
+        throw error;
     }
 }
 
@@ -51,10 +72,10 @@ export const getBoardDetailsService = async (boardId: string) => {
 
                 const completedSubs = subs?.rows?.filter((sub: any) => sub.isCompleted);
 
-                return {...task, subTasksTotal: subs?.rowCount, subTasksCompleted: completedSubs.length}
+                return { ...task, subTasksTotal: subs?.rowCount, subTasksCompleted: completedSubs.length }
             }));
 
-            return {...result, tasks: taskMap}
+            return { ...result, tasks: taskMap }
         }))
 
         return res;
@@ -93,7 +114,19 @@ export const getBoardColumnsServices = async (boardId: string) => {
 
         return columns.rows;
     } catch (error) {
-        console.error('Error getting board columns:', error);
+        console.error("Error getting board columns:", error);
+        throw error;
+    }
+}
+
+export const createBoardService = async (payload: ICreateBoardPayload) => {
+    try {
+
+        const result = await pool.query(queries.createBoard, [payload.name, payload.userId]);
+
+        return result.rows?.[0];
+    } catch (error) {
+        console.error("Error creating board", error);
         throw error;
     }
 }

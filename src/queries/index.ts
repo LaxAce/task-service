@@ -3,10 +3,25 @@ const queries = {
         SELECT * 
         FROM users;
     `,
+    getUserByEmail: `
+        SELECT id 
+        FROM users 
+        WHERE email = $1;
+    `,
+    createUser: `
+        INSERT INTO users (email, first_name, last_name)
+        VALUES ($1, $2, $3) 
+        RETURNING email, first_name AS "firstName", last_name AS "lastName";
+    `,
     getUserBoards: `
         SELECT id, name, user_id AS "userId" 
         FROM boards 
         WHERE user_id = $1;
+    `,
+    createBoard: `
+        INSERT INTO boards (name, user_id)
+        VALUES ($1, $2)
+        RETURNING name
     `,
     getBoardById: `
         SELECT id 
@@ -33,8 +48,6 @@ const queries = {
         FROM tasks
         WHERE id = $1;
     `,
-    // getUserById: 'SELECT * FROM users WHERE id = ?',
-    // createUser: 'INSERT INTO users (name, email) VALUES (?, ?) RETURNING *',
 }
 
 export default queries;
