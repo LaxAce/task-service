@@ -1,32 +1,36 @@
 import express from "express";
 import {
-   createBoardCTRL,
-   createColumnCTRL,
    createUserCTRL,
+   updateBoardCTRL,
+   createBoardCTRL,
    getAllUsersCTRL,
+   deleteBoardCTRL,
+   createColumnCTRL,
    getBoardByIdCTRL,
-   getBoardColumnsCTRL,
+   getUserBoardsCTRL,
    getTaskDetailsCTRL,
-   getUserBoardsCTRL
+   getBoardColumnsCTRL,
 } from "../controllers";
 
 const router = express.Router();
-
-router.route("/:user_id/boards")
-   .get(getUserBoardsCTRL)
-   .post(createBoardCTRL);
 
 router.route("/users")
    .get(getAllUsersCTRL)
    .post(createUserCTRL);
 
+router.route("/:user_id/boards")
+   .get(getUserBoardsCTRL)
+   .post(createBoardCTRL);
+
 router.route("/boards/:board_id")
    .get(getBoardByIdCTRL)
-
-router.get("/tasks/:task_id", getTaskDetailsCTRL)
+   .patch(updateBoardCTRL)
+   .delete(deleteBoardCTRL)
 
 router.route("/columns/:board_id")
    .get(getBoardColumnsCTRL)
    .post(createColumnCTRL)
+
+router.get("/tasks/:task_id", getTaskDetailsCTRL)
 
 export default router;

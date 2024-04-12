@@ -1,13 +1,15 @@
 import { Request, Response } from "express";
 import {
-    createBoardService,
-    createColumnService,
     createUserService,
+    updateBoardService,
+    createBoardService,
     getAllUsersService,
-    getBoardColumnsServices,
+    deleteBoardService,
+    createColumnService,
+    getUserBoardsServices,
     getBoardDetailsService,
     getTaskDetailsServices,
-    getUserBoardsServices
+    getBoardColumnsServices,
 } from "../services";
 import {
     catchError,
@@ -55,6 +57,31 @@ export const createBoardCTRL = async (req: Request, res: Response) => {
         const result = await createBoardService({name, userId: user_id, columns});
 
         return successResponse(result, res, "Board created successfully");
+    } catch (error: any) {
+        return catchError(error.message, res, 500);
+    }
+}
+
+export const updateBoardCTRL = async (req: Request, res: Response) => {
+    try {
+        const { board_id } = req.params;
+        const { name, columns } = req.body;
+
+        const result = await updateBoardService({name, boardId: board_id, columns});
+
+        return successResponse(result, res, "Board updated successfully");
+    } catch (error: any) {
+        return catchError(error.message, res, 500);
+    }
+}
+
+export const deleteBoardCTRL = async (req: Request, res: Response) => {
+    try {
+        const { board_id } = req.params;
+        
+        const result = await deleteBoardService(board_id);
+
+        return successResponse(result, res, "Board deleted successfully");
     } catch (error: any) {
         return catchError(error.message, res, 500);
     }

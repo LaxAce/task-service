@@ -2,23 +2,12 @@ import pool from "../database";
 import queries from "../queries";
 import { colorsList } from "../constants";
 import { areAllStringsUnique, getRandomColor } from "../utils/helpers";
-
-interface IUserPayload {
-    email: string;
-    lastName?: string;
-    firstName?: string;
-}
-
-interface ICreateBoardPayload {
-    name: string;
-    userId: string;
-    columns: string[];
-}
-
-interface ICreateColumnPayload {
-    name: string;
-    boardId: string;
-}
+import {
+    IUserPayload,
+    ICreateBoardPayload,
+    IUpdateBoardPayload,
+    ICreateColumnPayload,
+} from "../types";
 
 export const createUserService = async (payload: IUserPayload) => {
     try {
@@ -154,6 +143,58 @@ export const createBoardService = async (payload: ICreateBoardPayload) => {
     }
 }
 
+export const updateBoardService = async (payload: IUpdateBoardPayload) => {
+    try {
+        const { name, boardId, columns } = payload;
+
+        const existingBoard = await pool.query(queries.getBoardById, [boardId]);
+
+        if (!existingBoard.rows?.[0]?.id) {
+            throw new Error("Board does not exist")
+        }
+
+        if (!areAllStringsUnique(columns)) {
+            throw new Error("No two column should have the same name")
+        }
+
+        const result = await pool.query(queries.updateBoard, [name, boardId]);
+
+        // Delete all existing board columns
+        await pool.query(queries.deleteBoardColumns, [boardId]);
+
+        // Create new board columns
+        if (columns?.length) {
+            await Promise.all(columns.map(async (column) => await createColumnService({ name: column, boardId: result.rows?.[0]?.id })));
+        }
+
+        return { ...result.rows?.[0], columns };
+    } catch (error) {
+        console.error("Error updating board", error);
+        throw error;
+    }
+}
+
+export const deleteBoardService = async (boardId: string) => {
+    try {
+        const existingBoard = await pool.query(queries.getBoardById, [boardId]);
+
+        if (!existingBoard.rows?.[0]?.id) {
+            throw new Error("Board does not exist")
+        }
+
+        // Delete all existing board columns
+        await pool.query(queries.deleteBoardColumns, [boardId]);
+
+        // Delete board
+        await pool.query(queries.deleteBoard, [boardId]);
+
+        return { id: boardId };
+    } catch (error) {
+        console.error("Error deleting board", error);
+        throw error
+    }
+}
+
 export const createColumnService = async (payload: ICreateColumnPayload) => {
     try {
         const { boardId, name } = payload;
@@ -177,6 +218,30 @@ export const createColumnService = async (payload: ICreateColumnPayload) => {
         throw error;
     }
 }
+
+// export const updateColumnService = async (payload: ICreateColumnPayload) => {
+//     try {
+//         const { boardId, name } = payload;
+
+//         const existingBoard = await pool.query(queries.getBoardById, [boardId]);
+//         const existingColumn = await pool.query(queries.getColumnByNameForABoard, [name, boardId]);
+
+//         if (!existingBoard.rows?.[0]?.id) {
+//             throw new Error("Board not found");
+//         } else if (existingColumn.rows?.[0]?.id) {
+//             throw new Error("Column already exist");
+//         }
+
+//         const colorTag = await generateColorTag(boardId, name);
+
+//         const result = await pool.query(queries.createColumn, [name, colorTag, boardId]);
+
+//         return result.rows?.[0];
+//     } catch (error) {
+//         console.error("Error creating column", error);
+//         throw error;
+//     }
+// }
 
 export const generateColorTag = async (boardId: string, columnName: string) => {
     try {

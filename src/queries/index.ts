@@ -23,6 +23,16 @@ const queries = {
         VALUES ($1, $2)
         RETURNING id, name
     `,
+    updateBoard: `
+        UPDATE boards
+        SET name = $1
+        WHERE id = $2
+        RETURNING id, name;
+    `,
+    deleteBoard: `
+        DELETE FROM boards
+        WHERE id = $1
+    `,
     getBoardById: `
         SELECT id 
         FROM boards
@@ -49,6 +59,10 @@ const queries = {
         INSERT INTO board_columns (name, color_tag, board_id)
         VALUES ($1, $2, $3)
         RETURNING id, name, color_tag AS "colorTag", board_id AS "boardId";
+    `,
+    deleteBoardColumns: `
+        DELETE FROM board_columns
+        WHERE board_id = $1;
     `,
     getColumnTasks: `
         SELECT id, title, current_status AS "currentStatus" 
