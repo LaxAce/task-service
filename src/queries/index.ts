@@ -21,17 +21,34 @@ const queries = {
     createBoard: `
         INSERT INTO boards (name, user_id)
         VALUES ($1, $2)
-        RETURNING name
+        RETURNING id, name
     `,
     getBoardById: `
         SELECT id 
-        FROM board_columns 
-        WHERE board_id = $1;
+        FROM boards
+        WHERE id = $1;
+    `,
+    getBoardByNameForAUser: `
+        SELECT id
+        FROM boards
+        WHERE LOWER(name) = LOWER($1)
+        AND user_id = $2;
     `,
     getBoardColumns: `
         SELECT id, name, color_tag AS "colorTag", board_id AS "boardId" 
         FROM board_columns 
         WHERE board_id = $1;
+    `,
+    getColumnByNameForABoard: `
+        SELECT id, name, color_tag AS "colorTag"
+        FROM board_columns
+        WHERE LOWER(name) = LOWER($1)
+        AND board_id = $2;
+    `,
+    createColumn: `
+        INSERT INTO board_columns (name, color_tag, board_id)
+        VALUES ($1, $2, $3)
+        RETURNING id, name, color_tag AS "colorTag", board_id AS "boardId";
     `,
     getColumnTasks: `
         SELECT id, title, current_status AS "currentStatus" 

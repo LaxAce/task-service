@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import {
     createBoardService,
+    createColumnService,
     createUserService,
     getAllUsersService,
     getBoardColumnsServices,
@@ -49,9 +50,9 @@ export const getUserBoardsCTRL = async (req: Request, res: Response) => {
 export const createBoardCTRL = async (req: Request, res: Response) => {
     try {
         const { user_id } = req.params;
-        const { name } = req.body;
+        const { name, columns } = req.body;
 
-        const result = await createBoardService({name, userId: user_id});
+        const result = await createBoardService({name, userId: user_id, columns});
 
         return successResponse(result, res, "Board created successfully");
     } catch (error: any) {
@@ -66,6 +67,19 @@ export const getBoardByIdCTRL = async (req: Request, res: Response) => {
         const result = await getBoardDetailsService(board_id);
 
         return successResponse(result, res, "Board details fetched successfully");
+    } catch (error: any) {
+        return catchError(error.message, res, 500);
+    }
+}
+
+export const createColumnCTRL = async (req: Request, res: Response) => {
+    try {
+        const { board_id } = req.params;
+        const { name } = req.body;
+
+        const result = await createColumnService({name, boardId: board_id});
+
+        return successResponse(result, res, "Column created successfully");
     } catch (error: any) {
         return catchError(error.message, res, 500);
     }

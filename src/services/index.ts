@@ -1,5 +1,7 @@
 import pool from "../database";
 import queries from "../queries";
+import { colorsList } from "../constants";
+import { areAllStringsUnique, getRandomColor } from "../utils/helpers";
 
 interface IUserPayload {
     email: string;
@@ -10,6 +12,12 @@ interface IUserPayload {
 interface ICreateBoardPayload {
     name: string;
     userId: string;
+    columns: string[];
+}
+
+interface ICreateColumnPayload {
+    name: string;
+    boardId: string;
 }
 
 export const createUserService = async (payload: IUserPayload) => {
@@ -36,7 +44,7 @@ export const createUserService = async (payload: IUserPayload) => {
 export const getAllUsersService = async () => {
     try {
         const result = await pool.query(queries.getAllUsers);
-        
+
         return result.rows;
     } catch (error) {
         console.error('Error getting users', error);
@@ -121,12 +129,73 @@ export const getBoardColumnsServices = async (boardId: string) => {
 
 export const createBoardService = async (payload: ICreateBoardPayload) => {
     try {
+        const { name, userId, columns } = payload;
 
-        const result = await pool.query(queries.createBoard, [payload.name, payload.userId]);
+        const existingBoard = await pool.query(queries.getBoardByNameForAUser, [name, userId]);
+
+        if (existingBoard.rows?.[0]?.id) {
+            throw new Error("Board with this name already exist")
+        }
+
+        if (!areAllStringsUnique(columns)) {
+            throw new Error("No two column should have the same name")
+        }
+
+        const result = await pool.query(queries.createBoard, [name, userId]);
+
+        if (columns?.length) {
+            await Promise.all(columns.map(async (column) => await createColumnService({ name: column, boardId: result.rows?.[0]?.id })));
+        }
+
+        return { ...result.rows?.[0], columns };
+    } catch (error) {
+        console.error("Error creating board", error);
+        throw error;
+    }
+}
+
+export const createColumnService = async (payload: ICreateColumnPayload) => {
+    try {
+        const { boardId, name } = payload;
+
+        const existingBoard = await pool.query(queries.getBoardById, [boardId]);
+        const existingColumn = await pool.query(queries.getColumnByNameForABoard, [name, boardId]);
+
+        if (!existingBoard.rows?.[0]?.id) {
+            throw new Error("Board not found");
+        } else if (existingColumn.rows?.[0]?.id) {
+            throw new Error("Column already exist");
+        }
+
+        const colorTag = await generateColorTag(boardId, name);
+
+        const result = await pool.query(queries.createColumn, [name, colorTag, boardId]);
 
         return result.rows?.[0];
     } catch (error) {
-        console.error("Error creating board", error);
+        console.error("Error creating column", error);
+        throw error;
+    }
+}
+
+export const generateColorTag = async (boardId: string, columnName: string) => {
+    try {
+        const columns = await pool.query(queries.getBoardColumns, [boardId]);
+
+        const currentColors = columns.rows?.map((column: any) => column.colorTag);
+
+        if (columnName == "Todo") {
+            return colorsList[0];
+        } else if (columnName == "Doing") {
+            return colorsList[1];
+        } else if (columnName == "Done") {
+            return colorsList[2];
+        } else {
+            const color = getRandomColor(currentColors);
+            return color;
+        }
+    } catch (error) {
+        console.error("Error generating color");
         throw error;
     }
 }

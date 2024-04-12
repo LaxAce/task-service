@@ -1,6 +1,7 @@
 import express from "express";
 import {
    createBoardCTRL,
+   createColumnCTRL,
    createUserCTRL,
    getAllUsersCTRL,
    getBoardByIdCTRL,
@@ -24,6 +25,8 @@ router.route("/boards/:board_id")
 
 router.get("/tasks/:task_id", getTaskDetailsCTRL)
 
-router.get("/columns/:board_id", getBoardColumnsCTRL)
+router.route("/columns/:board_id")
+   .get(getBoardColumnsCTRL)
+   .post(createColumnCTRL)
 
 export default router;
