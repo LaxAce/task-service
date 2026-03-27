@@ -10,6 +10,10 @@ import {
    getUserBoardsCTRL,
    getTaskDetailsCTRL,
    getBoardColumnsCTRL,
+   createTaskCTRL,
+   updateTaskCTRL,
+   deleteTaskCTRL,
+   updateSubTaskCTRL,
 } from "../controllers";
 
 const router = express.Router();
@@ -24,13 +28,22 @@ router.route("/:user_id/boards")
 
 router.route("/boards/:board_id")
    .get(getBoardByIdCTRL)
-   .patch(updateBoardCTRL)
-   .delete(deleteBoardCTRL)
+   .put(updateBoardCTRL)
+   .delete(deleteBoardCTRL);
 
 router.route("/columns/:board_id")
    .get(getBoardColumnsCTRL)
-   .post(createColumnCTRL)
+   .post(createColumnCTRL);
 
-router.get("/tasks/:task_id", getTaskDetailsCTRL)
+router.route("/tasks/:task_id")
+   .get(getTaskDetailsCTRL)
+   .put(updateTaskCTRL)
+   .delete(deleteTaskCTRL);
+
+router.route("/tasks")
+   .post(createTaskCTRL);
+
+router.route("/sub_task/:id")
+   .patch(updateSubTaskCTRL);
 
 export default router;
