@@ -64,20 +64,75 @@ const queries = {
         DELETE FROM board_columns
         WHERE board_id = $1;
     `,
+    deleteBoardColumn: `
+        DELETE FROM board_columns
+        WHERE id = $1;
+    `,
+    updateBoardColumn: `
+        UPDATE board_columns
+        SET name = $1
+        WHERE id = $2
+        RETURNING id, name, color_tag AS "colorTag", board_id AS "boardId";
+    `,
     getColumnTasks: `
         SELECT id, title, current_status AS "currentStatus" 
         FROM tasks 
         WHERE board_column_id = $1;
     `,
-    getSubTasksById: `
-        SELECT id, title, is_completed AS "isCompleted" 
-        FROM sub_tasks 
-        WHERE task_id = $1;
-    `,
     getTaskById: `
         SELECT id, title, description, current_status AS "CurrentStatus", board_column_id AS "boardColumnId"
         FROM tasks
         WHERE id = $1;
+    `,
+    getTaskByNameForABoard: `
+        SELECT id, title, description, current_status AS "CurrentStatus", board_column_id AS "boardColumnId"
+        FROM tasks
+        WHERE LOWER(title) = LOWER($1)
+        AND board_column_id = $2;
+    `,
+    createTask: `
+        INSERT INTO tasks (title, description, current_status, board_column_id)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id, title, description,  board_column_id AS "boardColumnId";
+    `,
+    updateTask: `
+        UPDATE tasks
+        SET title = $1, description = $2, board_column_id = $3
+        WHERE id = $4
+        RETURNING id, title, description, board_column_id AS "boardColumnId";
+    `,
+    deleteTask: `
+        DELETE FROM tasks
+        WHERE id = $1;
+    `,
+    createSubTask: `
+        INSERT INTO sub_tasks (title, task_id)
+        VALUES ($1, $2)
+        RETURNING id, title, is_completed AS "isCompleted";
+    `,
+    getSubTasksByTaskId: `
+        SELECT id, title, is_completed AS "isCompleted" 
+        FROM sub_tasks 
+        WHERE task_id = $1;
+    `,
+    getSubTasksById: `
+        SELECT id, title, is_completed AS "isCompleted"
+        FROM sub_tasks
+        WHERE id = $1;
+    `,
+    deleteSubTask: `
+        DELETE FROM sub_tasks
+        WHERE id = $1;
+    `,
+    deleteSubTaskByTaskId: `
+        DELETE FROM sub_tasks
+        WHERE task_id = $1;
+    `,
+    updateSubTask: `
+        UPDATE sub_tasks
+        SET title = $1, is_completed = $2
+        WHERE id = $3
+        RETURNING id, title, is_completed AS "isCompleted";
     `,
 }
 
