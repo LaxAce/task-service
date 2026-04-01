@@ -1,7 +1,7 @@
-import { colorsList } from "../constants";
+import constants from "../constants";
 
 export const getRandomColor = (currentColors: string[]): string => {
-    const colorsToConsider = colorsList.slice(3); // Exclude the first three colors
+    const colorsToConsider = constants.colorsList.slice(3); // Exclude the first three colors
     const randomIndex = Math.floor(Math.random() * colorsToConsider.length);
     const color = colorsToConsider[randomIndex];
 
@@ -16,7 +16,8 @@ export const getRandomColor = (currentColors: string[]): string => {
 }
 
 export const areAllStringsUnique = (arr: string[]): boolean => {
-    const lowerCaseArr = arr.map(item => item.toLowerCase());
+    if (!Array.isArray(arr)) return true;
+    const lowerCaseArr = arr?.map(item => item.toLowerCase());
     const set = new Set(lowerCaseArr);
     return set.size === arr.length;
 }

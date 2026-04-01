@@ -1,5 +1,9 @@
+import { NextFunction, Request, Response } from "express";
+import { ZodSchema } from "zod";
+
 export interface IUserPayload {
     email: string;
+    password: string;
     lastName?: string;
     firstName?: string;
 }
@@ -50,4 +54,26 @@ export interface IUpdateSubtaskPayload {
     id: string;
     title?: string;
     isCompleted?: boolean;
+}
+
+export interface IValidationSchema {
+    body?: ZodSchema;
+    query?: ZodSchema;
+    params?: ZodSchema;
+}
+
+export interface ILoginPayload {
+    email: string;
+    password: string;
+}
+
+export interface IVerifyPayload {
+    id: string;
+    uniqueId: string;
+}
+
+export interface IForgotPasswordPayload {
+    id: string;
+    uniqueId: string;
+    password: string;
 }

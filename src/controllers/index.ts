@@ -1,19 +1,23 @@
 import { Request, Response } from "express";
 import {
+    loginService,
     createUserService,
+    createTaskService,
+    updateTaskService,
+    deleteTaskService,
     updateBoardService,
     createBoardService,
     getAllUsersService,
     deleteBoardService,
+    verifyEmailService,
     createColumnService,
+    updateSubTaskService,
     getUserBoardsServices,
     getBoardDetailsService,
     getTaskDetailsServices,
     getBoardColumnsServices,
-    createTaskService,
-    updateTaskService,
-    deleteTaskService,
-    updateSubTaskService,
+    verifyForgotPasswordService,
+    initiateForgotPasswordService,
 } from "../services";
 import {
     catchError,
@@ -22,10 +26,55 @@ import {
 
 export const createUserCTRL = async (req: Request, res: Response) => {
     try {
-
         const result = await createUserService(req.body);
 
-        return successResponse(result, res, "User created successfully");
+        return successResponse(result, res, "Verification stated successfully");
+    } catch (error: any) {
+        return catchError(error.message, res, 500);
+    }
+}
+
+export const verifyEmailCTRL = async (req: Request, res: Response) => {
+    try {
+        const { id, uniqueId } = req.body;
+
+        const result = await verifyEmailService({ id, uniqueId });
+
+        return successResponse(result, res, "Email verified successfully");
+    } catch (error: any) {
+        return catchError(error.message, res, 500);
+    }
+}
+
+export const initiateForgotPasswordCTRL = async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+
+        const result = await initiateForgotPasswordService(email);
+
+        return successResponse(result, res, "Forgot password initiated successfully");
+    } catch (error: any) {
+        return catchError(error.message, res, 500)
+    }
+}
+
+export const verifyForgotPasswordCTRL = async (req: Request, res: Response) => {
+    try {
+        const { id, uniqueId, password } = req.body;
+
+        const result = await verifyForgotPasswordService({ id, uniqueId, password });
+
+        return successResponse(result, res, "Password reset successfully");
+    } catch (error: any) {
+        return catchError(error.message, res, 500)
+    }
+}
+
+export const loginCTRL = async (req: Request, res: Response) => {
+    try {
+        const result = await loginService(req.body);
+
+        return successResponse(result, res, "Logged in successfully");
     } catch (error: any) {
         return catchError(error.message, res, 500);
     }
@@ -43,9 +92,9 @@ export const getAllUsersCTRL = async (req: Request, res: Response) => {
 
 export const getUserBoardsCTRL = async (req: Request, res: Response) => {
     try {
-        const { user_id } = req.params;
+        const { id } = req.body.user;
 
-        const result = await getUserBoardsServices(user_id)
+        const result = await getUserBoardsServices(id)
 
         return successResponse(result, res, "User boards fetched successfully");
     } catch (error: any) {
@@ -55,10 +104,9 @@ export const getUserBoardsCTRL = async (req: Request, res: Response) => {
 
 export const createBoardCTRL = async (req: Request, res: Response) => {
     try {
-        const { user_id } = req.params;
-        const { name, columns } = req.body;
+        const { name, columns, user } = req.body;
 
-        const result = await createBoardService({ name, userId: user_id, columns });
+        const result = await createBoardService({ name, userId: user.id, columns });
 
         return successResponse(result, res, "Board created successfully");
     } catch (error: any) {
@@ -157,7 +205,7 @@ export const updateTaskCTRL = async (req: Request, res: Response) => {
         const { task_id } = req.params;
         const { title, description, subTasks, boardColumnId } = req.body;
 
-        const result = await updateTaskService({title, description, subTasks, boardColumnId, taskId: task_id});
+        const result = await updateTaskService({ title, description, subTasks, boardColumnId, taskId: task_id });
 
         return successResponse(result, res, "Task updated successfully");
     } catch (error: any) {
@@ -182,7 +230,7 @@ export const updateSubTaskCTRL = async (req: Request, res: Response) => {
         const { id } = req.params;
         const { title, isCompleted } = req.body;
 
-        const result = await updateSubTaskService({id, isCompleted, title});
+        const result = await updateSubTaskService({ id, isCompleted, title });
 
         return successResponse(result, res, "Subtask updated successfully");
     } catch (error: any) {

@@ -51,6 +51,19 @@ CREATE TABLE public.boards (
 
 
 --
+-- Name: forgot_password; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.forgot_password (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    user_id uuid NOT NULL,
+    unique_id character varying(255) NOT NULL,
+    create_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone NOT NULL
+);
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -85,6 +98,19 @@ CREATE TABLE public.tasks (
 
 
 --
+-- Name: user_verification; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_verification (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    user_id uuid NOT NULL,
+    unique_id character varying(255) NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    expires_at timestamp with time zone NOT NULL
+);
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -93,7 +119,9 @@ CREATE TABLE public.users (
     email character varying(255) NOT NULL,
     first_name character varying(255),
     last_name character varying(255),
-    password character varying(255) NOT NULL
+    password character varying(255) NOT NULL,
+    is_verified boolean DEFAULT false NOT NULL,
+    is_admin boolean DEFAULT false NOT NULL
 );
 
 
@@ -130,6 +158,14 @@ ALTER TABLE ONLY public.boards
 
 
 --
+-- Name: forgot_password forgot_password_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.forgot_password
+    ADD CONSTRAINT forgot_password_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -151,6 +187,14 @@ ALTER TABLE ONLY public.sub_tasks
 
 ALTER TABLE ONLY public.tasks
     ADD CONSTRAINT tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_verification user_verification_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_verification
+    ADD CONSTRAINT user_verification_pkey PRIMARY KEY (id);
 
 
 --
@@ -178,6 +222,14 @@ ALTER TABLE ONLY public.boards
 
 
 --
+-- Name: forgot_password forgot_password_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.forgot_password
+    ADD CONSTRAINT forgot_password_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: sub_tasks sub_tasks_task_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -194,6 +246,14 @@ ALTER TABLE ONLY public.tasks
 
 
 --
+-- Name: user_verification user_verification_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_verification
+    ADD CONSTRAINT user_verification_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
@@ -203,4 +263,6 @@ ALTER TABLE ONLY public.tasks
 --
 
 INSERT INTO public.schema_migrations (version) VALUES
-    ('20260328120117');
+    ('20260328120117'),
+    ('20260330002030'),
+    ('20260401061411');

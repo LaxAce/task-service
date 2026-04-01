@@ -1,34 +1,243 @@
+import bcrypt from "bcrypt"
+import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
+
 import pool from "../database";
 import queries from "../queries";
-import { colorsList } from "../constants";
 import { areAllStringsUnique, getRandomColor } from "../utils/helpers";
 import {
     IUserPayload,
+    ILoginPayload,
+    IVerifyPayload,
+    ICreateTaskPayload,
+    IUpdateTaskPayload,
     ICreateBoardPayload,
     IUpdateBoardPayload,
     ICreateColumnPayload,
-    ICreateTaskPayload,
-    IUpdateTaskPayload,
     IUpdateSubtaskPayload,
+    IForgotPasswordPayload,
 } from "../types";
+import constants, { SALT_ROUNDS } from "../constants";
+
+const transporter = nodemailer.createTransport({
+    service: constants.mailServer.service,
+    auth: {
+        user: constants.mailServer.user,
+        pass: constants.mailServer.pass,
+    },
+});
 
 export const createUserService = async (payload: IUserPayload) => {
     try {
+        const { email, password, firstName, lastName } = payload;
 
-        const user = await pool.query(queries.getUserByEmail, [payload.email]);
+        const userResponse = await pool.query(queries.getUserByEmail, [payload.email]);
+        const user = userResponse.rows?.[0];
 
-        if (user?.rows?.[0]?.id) {
-            return user.rows?.[0];
+        if (user?.isVerified) {
+            throw new Error("User already exist")
         }
 
-        const result = await pool.query(
+        if (user?.id) {
+            const userVerificationRes = await pool.query(queries.getUserVerificationByUserId, [user?.id]);
+            const userVerification = userVerificationRes.rows?.[0];
+
+            const isExpired = userVerification?.expires_at &&
+                new Date(userVerification.expires_at).getTime() < Date.now();
+
+            if (isExpired) {
+                await pool.query(queries.deleteUser, [user?.id]);
+            } else {
+                throw new Error("User already exist, please verify your email");
+            }
+        }
+
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+        const newUserResponse = await pool.query(
             queries.createUser,
-            [payload.email, payload.firstName || "", payload?.lastName || ""]
+            [email, hashedPassword, firstName || "", lastName || ""]
         );
 
-        return result.rows?.[0];
+        const newUser = newUserResponse.rows?.[0];
+
+        const uniqueId = `${newUser?.id}-${Date.now()}`;
+        const hashedUniqueId = await bcrypt.hash(uniqueId, SALT_ROUNDS);
+        const expiredAt = new Date(Date.now() + (6 * 60 * 60 * 1000)); // 6 hours (hours * minutes * seconds * 1000)
+
+        await pool.query(queries.createUserVerification, [newUser.id, hashedUniqueId, expiredAt]);
+
+        // Send email
+        await transporter.sendMail({
+            from: '"Manage Wise"',
+            to: email,
+            subject: '🚨 Verify Your Email',
+            html: `
+                    <p>Verify your email address to complete the signup and login into your account.</p>
+                    <p>This link <b>expires in 6 hours</b>. </p>
+                    <p>Press <a href=${constants.clientUrl + "/verify/" + newUser.id + "/" + uniqueId}>here</a> to proceed</p>
+                    <br />
+                    <p>— Manage Wise Team</p>
+                `,
+        });
+
+        return { success: true };
     } catch (error) {
-        console.error('Error creating user', error);
+        console.error("Error creating user", error);
+        throw error;
+    }
+}
+
+export const verifyEmailService = async (payload: IVerifyPayload) => {
+    try {
+        const { id, uniqueId } = payload;
+
+        const userVerificationRes = await pool.query(queries.getUserAndVerificationByUserId, [id]);
+        const userVerification = userVerificationRes.rows?.[0];
+
+        if (!userVerification?.id) {
+            throw new Error("Error verifying user");
+        }
+
+        if (userVerification.is_verified) {
+            throw new Error("Verification link expired");
+        }
+
+        const isExpired = userVerification?.expires_at &&
+            new Date(userVerification?.expires_at).getTime() < Date.now();
+        const hashedUniqueId = userVerification?.unique_id;
+
+        if (isExpired) {
+            await pool.query(queries.deleteUser, [id]);
+            throw new Error("Verification link expired")
+        }
+
+        const isValid = await bcrypt.compare(uniqueId, hashedUniqueId);
+
+        if (!isValid) {
+            throw new Error("Invalid verification link");
+        }
+
+        await pool.query(queries.updateUserVerification, [true, id]);
+        await pool.query(queries.invalidateUserVerification, [userVerification.id]);
+
+        return { success: true }
+    } catch (error) {
+        console.error("Error verifying user", error);
+        throw error;
+    }
+}
+
+export const initiateForgotPasswordService = async (email: string) => {
+    try {
+        const existingUserRes = await pool.query(queries.getUserByEmail, [email]);
+        const existingUser = existingUserRes.rows?.[0];
+        const id = existingUser?.id;
+
+        if (!id) {
+            throw new Error("User not found");
+        }
+
+        const uniqueId = `${id}-${Date.now()}`;
+        const hashedUniqueId = await bcrypt.hash(uniqueId, SALT_ROUNDS);
+        const expiresAt = new Date(Date.now() + (2 * 60 * 60 * 1000)); // 2 hours
+
+        await pool.query(queries.createForgotPassword, [id, hashedUniqueId, expiresAt]);
+
+        // Send email
+        await transporter.sendMail({
+            from: '"Manage Wise"',
+            to: email,
+            subject: '🚨 Reset Your Password',
+            html: `
+                    <p>You requested to reset your password.</p>
+                    <p>Click the link below to create a new password for your account:</p>
+                    <p>
+                        <a href="${constants.clientUrl + "/reset-password/" + id + "/" + uniqueId}">
+                        Reset your password
+                        </a>
+                    </p>
+                    <p>This link <b>expires in 2 hours</b>.</p>
+                    <p>If you didn’t request this, you can safely ignore this email.</p>
+                    <br />
+                    <p>— Manage Wise Team</p>
+                `,
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error initiating forgot password", error);
+        throw error;
+    }
+}
+
+export const verifyForgotPasswordService = async (payload: IForgotPasswordPayload) => {
+    try {
+        const { id, uniqueId, password } = payload;
+
+        const existingUserRes = await pool.query(queries.getUserAndForgotPasswordByUserId, [id]);
+        const existingUser = existingUserRes.rows?.length && existingUserRes.rows?.[existingUserRes.rows?.length - 1];
+
+        if (!existingUser?.id) {
+            throw new Error("User not found");
+        }
+
+        const isExpired = new Date(existingUser.expires_at).getTime() < Date.now();
+
+        if (isExpired) {
+            throw new Error("Forgot password link expired");
+        }
+
+        const isValid = bcrypt.compare(uniqueId, existingUser.unique_id);
+
+        if (!isValid) {
+            throw new Error("Invalid verification link");
+        }
+
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+        await pool.query(queries.updateUserPasswordAndVerification, [hashedPassword, true, id]);
+        await pool.query(queries.invalidateForgotPassword, [existingUser.id]);
+
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating password", error);
+        throw error;
+    }
+}
+
+export const loginService = async (payload: ILoginPayload) => {
+    try {
+        const { email, password } = payload;
+
+        const result = await pool.query(queries.getUserByEmail, [email]);
+        const user = result.rows?.[0];
+
+        if (!user?.id) {
+            throw new Error("Invalid credentials");
+        }
+
+        if (!user?.isVerified) {
+            throw new Error("User not verified");
+        }
+
+        const dbPassword = user?.password;
+
+        const isMatch = await bcrypt.compare(password, dbPassword);
+
+        if (!isMatch) {
+            throw new Error("Invalid credentials");
+        }
+
+        const token = jwt.sign(
+            { id: user.id, email },
+            process.env.JWT_SECRET as string,
+            { expiresIn: "1hr" }
+        )
+
+        return { token };
+    } catch (error) {
+        console.error('Error logging in', error);
         throw error;
     }
 }
@@ -73,6 +282,12 @@ export const createBoardService = async (payload: ICreateBoardPayload) => {
 
 export const getUserBoardsServices = async (userId: string) => {
     try {
+        const user = await pool.query(queries.getUserById, [userId]);
+
+        if (!user.rows?.[0]?.id) {
+            throw new Error("User not found");
+        }
+
         const result = await pool.query(queries.getUserBoards, [userId]);
 
         return { boards: result.rows, count: result.rowCount };
@@ -123,7 +338,7 @@ export const updateBoardService = async (payload: IUpdateBoardPayload) => {
         }
 
         const activeColumns = columns?.filter(column => !column?.isDeleting && column?.name)
-            .map(column => column?.name);
+            ?.map(column => column?.name) ?? [];
 
         if (!areAllStringsUnique(activeColumns)) {
             throw new Error("No two column should have the same name")
@@ -244,11 +459,11 @@ export const generateColorTag = async (boardId: string, columnName: string) => {
         const currentColors = columns.rows?.map((column: any) => column.colorTag);
 
         if (columnName == "Todo") {
-            return colorsList[0];
+            return constants.colorsList[0];
         } else if (columnName == "Doing") {
-            return colorsList[1];
+            return constants.colorsList[1];
         } else if (columnName == "Done") {
-            return colorsList[2];
+            return constants.colorsList[2];
         } else {
             const color = getRandomColor(currentColors);
             return color;
@@ -329,7 +544,7 @@ export const updateTaskService = async (payload: IUpdateTaskPayload) => {
                 } else if (sub.isDeleting) {
                     await pool.query(queries.deleteSubTask, [sub.id]);
                 } else if (sub.isEditing) {
-                    await updateSubTaskService({id: sub.id, title: sub.title});
+                    await updateSubTaskService({ id: sub.id, title: sub.title });
                 }
             }))
         }
@@ -369,10 +584,10 @@ export const updateSubTaskService = async (payload: IUpdateSubtaskPayload) => {
         if (!existingSubtask.rows?.[0]?.id) {
             throw new Error("Subtask not found");
         }
-        
+
         const titleValue = title ?? existingSubtask.rows?.[0]?.title;
         const isCompletedValue = isCompleted ?? existingSubtask.rows?.[0]?.isCompleted;
-        
+
         const result = await pool.query(queries.updateSubTask, [titleValue, isCompletedValue, id]);
 
         return { ...result.rows?.[0] }
