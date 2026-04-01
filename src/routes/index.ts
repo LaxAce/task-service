@@ -1,49 +1,86 @@
 import express from "express";
 import {
-   createUserCTRL,
-   updateBoardCTRL,
-   createBoardCTRL,
-   getAllUsersCTRL,
-   deleteBoardCTRL,
-   createColumnCTRL,
-   getBoardByIdCTRL,
-   getUserBoardsCTRL,
-   getTaskDetailsCTRL,
-   getBoardColumnsCTRL,
+   loginCTRL,
    createTaskCTRL,
    updateTaskCTRL,
    deleteTaskCTRL,
+   createUserCTRL,
+   updateBoardCTRL,
+   createBoardCTRL,
+   deleteBoardCTRL,
+   verifyEmailCTRL,
+   createColumnCTRL,
+   getBoardByIdCTRL,
    updateSubTaskCTRL,
+   getUserBoardsCTRL,
+   getTaskDetailsCTRL,
+   getBoardColumnsCTRL,
+   verifyForgotPasswordCTRL,
+   initiateForgotPasswordCTRL,
 } from "../controllers";
+
+import {
+   validateLogin,
+   validateTaskId,
+   validateBoardId,
+   validateUpdateTask,
+   validateCreateTask,
+   validateCreateUser,
+   validateUpdateBoard,
+   validateCreateBoard,
+   validateVerifyEmail,
+   validateCreateColumn,
+   validateUpdateSubTask,
+   validateForgotPassword,
+   validateVerifyForgotPassword,
+} from "../validations";
+import { verifyToken } from "../utils/auth";
 
 const router = express.Router();
 
-router.route("/users")
-   .get(getAllUsersCTRL)
-   .post(createUserCTRL);
+// Auth 
+router.route("/register")
+   .post(validateCreateUser, createUserCTRL);
 
-router.route("/:user_id/boards")
+router.route("/verify-email")
+   .post(validateVerifyEmail, verifyEmailCTRL);
+
+router.route("/forgot_password")
+   .post(validateForgotPassword, initiateForgotPasswordCTRL);
+
+router.route("/verify_forgot_password")
+   .post(validateVerifyForgotPassword, verifyForgotPasswordCTRL);
+
+router.route("/login")
+   .post(validateLogin, loginCTRL);
+
+router.use(verifyToken);
+
+router.route("/boards")
    .get(getUserBoardsCTRL)
-   .post(createBoardCTRL);
+   .post(validateCreateBoard, createBoardCTRL);
 
 router.route("/boards/:board_id")
+   .all(validateBoardId)
    .get(getBoardByIdCTRL)
-   .put(updateBoardCTRL)
-   .delete(deleteBoardCTRL);
+   .delete(deleteBoardCTRL)
+   .put(validateUpdateBoard, updateBoardCTRL);
 
 router.route("/columns/:board_id")
+   .all(validateBoardId)
    .get(getBoardColumnsCTRL)
-   .post(createColumnCTRL);
+   .post(validateCreateColumn, createColumnCTRL);
 
 router.route("/tasks/:task_id")
+   .all(validateTaskId)
    .get(getTaskDetailsCTRL)
-   .put(updateTaskCTRL)
-   .delete(deleteTaskCTRL);
+   .delete(deleteTaskCTRL)
+   .put(validateUpdateTask, updateTaskCTRL);
 
 router.route("/tasks")
-   .post(createTaskCTRL);
+   .post(validateCreateTask, createTaskCTRL);
 
 router.route("/sub_task/:id")
-   .patch(updateSubTaskCTRL);
+   .patch(validateUpdateSubTask, updateSubTaskCTRL);
 
 export default router;

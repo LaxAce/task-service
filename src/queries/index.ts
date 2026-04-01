@@ -4,14 +4,76 @@ const queries = {
         FROM users;
     `,
     getUserByEmail: `
-        SELECT id 
+        SELECT id, email, password, first_name AS "FirstName", last_name AS "lastName", is_verified AS "isVerified"
         FROM users 
         WHERE email = $1;
     `,
+    getUserById: `
+        SELECT *
+        FROM users
+        WHERE id = $1;
+    `,
+    getUserVerificationByUserId: `
+        SELECT *
+        FROM user_verification
+        WHERE user_id = $1;
+    `,
+    getUserAndVerificationByUserId: `
+        SELECT *
+        FROM users
+        JOIN user_verification 
+        ON users.id=user_verification.user_id
+        WHERE users.id = $1;
+    `,
+    getUserAndForgotPasswordByUserId: `
+        SELECT *
+        FROM users
+        JOIN forgot_password
+        ON users.id = forgot_password.user_id
+        WHERE users.id = $1;
+    `,
     createUser: `
-        INSERT INTO users (email, first_name, last_name)
-        VALUES ($1, $2, $3) 
-        RETURNING email, first_name AS "firstName", last_name AS "lastName";
+        INSERT INTO users (email, password, first_name, last_name)
+        VALUES ($1, $2, $3, $4) 
+        RETURNING id, email, first_name AS "firstName", last_name AS "lastName";
+    `,
+    createUserVerification: `
+        INSERT INTO user_verification (user_id, unique_id, expires_at)
+        VALUES ($1, $2, $3)
+        RETURNING *;
+    `,
+    invalidateUserVerification: `
+        UPDATE user_verification
+        SET expires_at = NOW() - INTERVAL '100 years'
+        WHERE id = $1
+        RETURNING *;
+    `,
+    createForgotPassword: `
+        INSERT INTO forgot_password (user_id, unique_id, expires_at)
+        VALUES ($1, $2, $3)
+        RETURNING *;
+    `,
+    invalidateForgotPassword: `
+        UPDATE forgot_password
+        SET expires_at = NOW() - INTERVAL '100 years'
+        WHERE id = $1
+        RETURNING *;
+    `,
+    updateUserVerification: `
+        UPDATE users
+        SET is_verified = $1
+        WHERE id = $2
+        RETURNING id, email, is_verified as "isVerified";
+    `,
+    updateUserPasswordAndVerification: `
+        UPDATE users
+        SET password = $1, is_verified = $2
+        WHERE id = $3
+        RETURNING id, email, is_verified as "isVerified";
+    `,
+    deleteUser: `
+        DELETE FROM users
+        WHERE id = $1;
     `,
     getUserBoards: `
         SELECT id, name, user_id AS "userId" 
