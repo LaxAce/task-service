@@ -26,7 +26,8 @@ import {
 
 export const createUserCTRL = async (req: Request, res: Response) => {
     try {
-        const result = await createUserService(req.body);
+        const { email, password, firstName, lastName } = req.body;
+        const result = await createUserService({ email, password, firstName, lastName });
 
         return successResponse(result, res, "Verification stated successfully");
     } catch (error: any) {
@@ -60,9 +61,9 @@ export const initiateForgotPasswordCTRL = async (req: Request, res: Response) =>
 
 export const verifyForgotPasswordCTRL = async (req: Request, res: Response) => {
     try {
-        const { id, uniqueId, password } = req.body;
+        const { id, unique_id, password } = req.body;
 
-        const result = await verifyForgotPasswordService({ id, uniqueId, password });
+        const result = await verifyForgotPasswordService({ id, uniqueId: unique_id, password });
 
         return successResponse(result, res, "Password reset successfully");
     } catch (error: any) {
@@ -72,7 +73,9 @@ export const verifyForgotPasswordCTRL = async (req: Request, res: Response) => {
 
 export const loginCTRL = async (req: Request, res: Response) => {
     try {
-        const result = await loginService(req.body);
+        const { email, password } = req.body;
+
+        const result = await loginService({ email, password });
 
         return successResponse(result, res, "Logged in successfully");
     } catch (error: any) {
