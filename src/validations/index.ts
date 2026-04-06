@@ -19,7 +19,7 @@ export const validateCreateUser = validate({
 export const validateVerifyEmail = validate({
     body: z.object({
         id: z.uuid("Invalid verification id"),
-        unique_id: z.string("Invalid verification token")
+        uniqueId: z.string("Invalid verification token")
     })
 })
 

@@ -75,7 +75,7 @@ export const createUserService = async (payload: IUserPayload) => {
             html: `
                     <p>Verify your email address to complete the signup and login into your account.</p>
                     <p>This link <b>expires in 6 hours</b>. </p>
-                    <p>Press <a href=${constants.clientUrl + "/verify/" + newUser.id + "/" + uniqueId}>here</a> to proceed</p>
+                    <p>Press <a href=${constants.clientUrl + "/verify-email/?id=" + newUser.id + "&uniqueId=" + uniqueId}>here</a> to proceed</p>
                     <br />
                     <p>— Manage Wise Team</p>
                 `,
@@ -153,7 +153,7 @@ export const initiateForgotPasswordService = async (email: string) => {
                     <p>You requested to reset your password.</p>
                     <p>Click the link below to create a new password for your account:</p>
                     <p>
-                        <a href="${constants.clientUrl + "/reset-password/" + id + "/" + uniqueId}">
+                        <a href="${constants.clientUrl + "/reset-password/?id=" + id + "&uniqueId=" + uniqueId}">
                         Reset your password
                         </a>
                     </p>
