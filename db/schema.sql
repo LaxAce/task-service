@@ -210,7 +210,7 @@ ALTER TABLE ONLY public.users
 --
 
 ALTER TABLE ONLY public.board_columns
-    ADD CONSTRAINT board_columns_board_id_fkey FOREIGN KEY (board_id) REFERENCES public.boards(id);
+    ADD CONSTRAINT board_columns_board_id_fkey FOREIGN KEY (board_id) REFERENCES public.boards(id) ON DELETE CASCADE;
 
 
 --
@@ -218,7 +218,7 @@ ALTER TABLE ONLY public.board_columns
 --
 
 ALTER TABLE ONLY public.boards
-    ADD CONSTRAINT boards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT boards_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -234,7 +234,7 @@ ALTER TABLE ONLY public.forgot_password
 --
 
 ALTER TABLE ONLY public.sub_tasks
-    ADD CONSTRAINT sub_tasks_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(id);
+    ADD CONSTRAINT sub_tasks_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON DELETE CASCADE;
 
 
 --
@@ -242,7 +242,7 @@ ALTER TABLE ONLY public.sub_tasks
 --
 
 ALTER TABLE ONLY public.tasks
-    ADD CONSTRAINT tasks_board_column_id_fkey FOREIGN KEY (board_column_id) REFERENCES public.board_columns(id);
+    ADD CONSTRAINT tasks_board_column_id_fkey FOREIGN KEY (board_column_id) REFERENCES public.board_columns(id) ON DELETE CASCADE;
 
 
 --
@@ -265,4 +265,5 @@ ALTER TABLE ONLY public.user_verification
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260328120117'),
     ('20260330002030'),
-    ('20260401061411');
+    ('20260401061411'),
+    ('20260407081531');

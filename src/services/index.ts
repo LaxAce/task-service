@@ -232,7 +232,7 @@ export const loginService = async (payload: ILoginPayload) => {
         const token = jwt.sign(
             { id: user.id, email },
             process.env.JWT_SECRET as string,
-            { expiresIn: "1hr" }
+            { expiresIn: "2hr" }
         )
 
         return { token };
