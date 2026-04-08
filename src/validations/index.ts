@@ -101,12 +101,9 @@ export const validateUpdateTask = validate({
 export const validateCreateTask = validate({
     body: z.object({
         title: z.string("Task title has to be a string").min(3, "Task title must be at least 3 characters"),
-        description: z.string("Description must be a string").optional(),
         boardColumnId: z.uuid("Invalid column id"),
-        subTasks: z.array(z.object({
-            title: z.string("Subtask title must be a string"),
-            isCompleted: z.boolean("isCompleted must be a boolean").optional(),
-        })).optional(),
+        description: z.string("Description must be a string").optional(),
+        subTasks: z.array(z.string("Subtask title must be a string")).optional(),
     }),
 })
 

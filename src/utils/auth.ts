@@ -20,6 +20,7 @@ export const validate = (schema: IValidationSchema) => {
             return next();
         } catch (error: any) {
             const parsedError = JSON.parse(error);
+            console.error(parsedError);
             return catchError(parsedError?.[0]?.message, res, 400);
         }
     }
