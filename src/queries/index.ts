@@ -78,7 +78,8 @@ const queries = {
     getUserBoards: `
         SELECT id, name, user_id AS "userId" 
         FROM boards 
-        WHERE user_id = $1;
+        WHERE user_id = $1
+        ORDER BY created_at;
     `,
     createBoard: `
         INSERT INTO boards (name, user_id)
@@ -109,7 +110,8 @@ const queries = {
     getBoardColumns: `
         SELECT id, name, color_tag AS "colorTag", board_id AS "boardId" 
         FROM board_columns 
-        WHERE board_id = $1;
+        WHERE board_id = $1
+        ORDER BY created_at;
     `,
     getColumnByNameForABoard: `
         SELECT id, name, color_tag AS "colorTag"
