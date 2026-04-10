@@ -1,0 +1,41 @@
+-- migrate:up
+ALTER TABLE users
+ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+ALTER TABLE boards
+ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+ALTER TABLE board_columns
+ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+ALTER TABLE tasks
+ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+ALTER TABLE sub_tasks
+ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+
+-- migrate:down
+ALTER TABLE sub_tasks
+DROP COLUMN created_at,
+DROP COLUMN updated_at;
+
+ALTER TABLE tasks
+DROP COLUMN created_at,
+DROP COLUMN updated_at;
+
+ALTER TABLE board_columns
+DROP COLUMN created_at,
+DROP COLUMN updated_at;
+
+ALTER TABLE boards
+DROP COLUMN created_at,
+DROP COLUMN updated_at;
+
+ALTER TABLE users
+DROP COLUMN created_at,
+DROP COLUMN updated_at;
